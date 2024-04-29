@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAppClient", "WebAppClien
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{6FC88310-F714-472F-BEEE-CF9965799218}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OllamaChatClient", "OllamaChatClient\OllamaChatClient.csproj", "{4CB730CE-B65F-4276-B7D7-9084299BB76F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{6FC88310-F714-472F-BEEE-CF9965799218}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FC88310-F714-472F-BEEE-CF9965799218}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FC88310-F714-472F-BEEE-CF9965799218}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,15 +1,7 @@
+using Microsoft.SemanticKernel;
+
 var builder = WebApplication.CreateBuilder(args);
-
-
+builder.Services.AddKernel().AddOpenAIChatCompletion("gpt-3.5-turbo", "key");
 var app = builder.Build();
-
-app.MapGet("/chat", InvokePrompt);
+app.MapGet("/chat", (string question, Kernel kernel) => kernel.InvokePromptStreamingAsync<string>(question));
 app.Run();
-
-
-static async IAsyncEnumerable<string> InvokePrompt(string question) {
-    foreach (var word in question.Split(' ')) {
-        await Task.Delay(250);
-        yield return word + " ";
-    }
-}
