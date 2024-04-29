@@ -1,10 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAppClient", "WebAppClient\WebAppClient.csproj", "{1F5A4A88-FBC9-42A9-8720-78C2352B2F5F}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34818.151
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAppClient", "WebAppClient\WebAppClient.csproj", "{1F5A4A88-FBC9-42A9-8720-78C2352B2F5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{6FC88310-F714-472F-BEEE-CF9965799218}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApi", "WebApi\WebApi.csproj", "{6FC88310-F714-472F-BEEE-CF9965799218}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OllamaChatClient", "OllamaChatClient\OllamaChatClient.csproj", "{4CB730CE-B65F-4276-B7D7-9084299BB76F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OllamaChatClient", "OllamaChatClient\OllamaChatClient.csproj", "{4CB730CE-B65F-4276-B7D7-9084299BB76F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIWebApp.AppHost", "AIWebApp.AppHost\AIWebApp.AppHost.csproj", "{7DA88BC9-EBE4-4E26-A66B-28F499BB9214}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AIWebApp.ServiceDefaults", "AIWebApp.ServiceDefaults\AIWebApp.ServiceDefaults.csproj", "{A35F6F29-B329-4D17-B563-EC312017AA1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +31,16 @@ Global
 		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4CB730CE-B65F-4276-B7D7-9084299BB76F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DA88BC9-EBE4-4E26-A66B-28F499BB9214}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DA88BC9-EBE4-4E26-A66B-28F499BB9214}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DA88BC9-EBE4-4E26-A66B-28F499BB9214}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DA88BC9-EBE4-4E26-A66B-28F499BB9214}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A35F6F29-B329-4D17-B563-EC312017AA1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A35F6F29-B329-4D17-B563-EC312017AA1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A35F6F29-B329-4D17-B563-EC312017AA1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A35F6F29-B329-4D17-B563-EC312017AA1F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

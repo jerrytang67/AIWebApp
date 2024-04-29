@@ -1,6 +1,11 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 using HttpClient client = new();
 client.BaseAddress = new Uri("http://localhost:11434");
 
@@ -8,12 +13,12 @@ while (true) {
     Console.Write("请输入问题：");
     var q = Console.ReadLine();
 
-    var str = new {
+    var data = new {
         model = "llama3:8b",
         messages = new[] {
             new {
                 role = "system",
-                content = "你是一个全知全能的中文助手,请把问题用简短的中文回答"
+                content = "你是一个全知全能的中文助手,你叫哒哒,请把问题用简短的中文回答"
             },
             new {
                 role = "user",
@@ -22,44 +27,180 @@ while (true) {
         },
         stream = true
     };
-
-    var response = await client.PostAsJsonAsync("http://localhost:11434/api/chat", str);
-
-    if (response.IsSuccessStatusCode) {
-        using (var stream = await response.Content.ReadAsStreamAsync())
-        using (var reader = new StreamReader(stream)) {
-            var content = await reader.ReadToEndAsync();
-            var jsonObjects = content.Split(["}\n{"], StringSplitOptions.None);
-
-            for (var i = 0; i < jsonObjects.Length; i++) {
-                if (i != 0) {
-                    jsonObjects[i] = "{" + jsonObjects[i];
-                }
-
-                if (i != jsonObjects.Length - 1) {
-                    jsonObjects[i] += "}";
-                }
-
-                var obj = JObject.Parse(jsonObjects[i]);
-                ProcessElement(obj);
+    string content = JsonConvert.SerializeObject(data);
+    var buffer = Encoding.UTF8.GetBytes(content);
+    var byteContent = new ByteArrayContent(buffer);
+    byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+    var response = await client.PostAsync("/api/chat", byteContent).ConfigureAwait(false);
+    var done = false;
+    while (!done) {
+        string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        Console.WriteLine(jsonResponse);
+        Console.WriteLine();
+        Console.WriteLine();
+        var jsonObjects = jsonResponse.Split(["}\n{"], StringSplitOptions.None);
+        for (var i = 0; i < jsonObjects.Length; i++) {
+            if (i != 0) {
+                jsonObjects[i] = "{" + jsonObjects[i];
             }
+
+            if (i != jsonObjects.Length - 1) {
+                jsonObjects[i] += "}";
+            }
+
+            var obj = JObject.Parse(jsonObjects[i]);
+            ProcessElement(obj, out done);
         }
+        // yield return chatResponseMessage!.ToStreamingChatMessageContent();
     }
 
     Console.WriteLine();
+    Console.WriteLine();
 }
 
-void ProcessElement(JObject element) {
+
+void ProcessElement(JObject element, out bool done) {
     // 在这里处理 JObject
     // 你可以使用 element["propertyName"] 或者 element.Property("propertyName") 来访问属性
     // 例如：var content = element["message"]?["content"]?.ToString();
     // 其中 "?" 是在属性不存在时避免空引用异常的 C# 语法糖
     // 进行你的后续处理...
     var content = element["message"]?["content"]?.ToString();
+    done = element["done"]?.ToObject<bool>() ?? false;
     Console.Write(content);
 }
+
 
 // {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
 // {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
 // {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
 // {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
+
+namespace Codeblaze.SemanticKernel.Connectors.Ollama.ChatCompletion {
+    public class OllamaChatResponseMessageContent {
+        /// <summary>
+        /// The role of the author of the message either "system", "user", or "assistant".
+        /// </summary>
+        [JsonProperty("role")]
+        public string Role { get; set; } = null!;
+
+        /// <summary>
+        /// The message content
+        /// </summary>
+        [JsonProperty("content")]
+        public string Content { get; set; } = null!;
+    }
+
+    public class OllamaChatResponseMessage : OllamaResponseMessage {
+        // 这是一个默认构造函数
+        public OllamaChatResponseMessage() {
+        }
+
+        // 这是一个带有参数的构造函数，并且被JsonConstructor属性标记
+        [JsonConstructor]
+        public OllamaChatResponseMessage(string role, string content) {
+            Message = new OllamaChatResponseMessageContent {
+                Role = role,
+                Content = content
+            };
+        }
+
+
+        /// <summary>
+        /// The message generated by the chat model.
+        /// </summary>
+        public OllamaChatResponseMessageContent Message { get; set; } = null!;
+
+        public ChatMessageContent ToChatMessageContent() {
+            var metadata = new Dictionary<string, object>() {
+                { "total_duration", TotalDuration },
+                { "load_duration", LoadDuration },
+                { "prompt_eval_count", PromptEvalCount },
+                { "prompt_eval_duration", PromptEvalDuration },
+                { "eval_count", EvalCount },
+                { "eval_duration", EvalDuration }
+            };
+
+            return new ChatMessageContent(
+                role: new AuthorRole(Message.Role),
+                content: Message.Content,
+                modelId: Model,
+                metadata: metadata!);
+        }
+
+        internal StreamingChatMessageContent ToStreamingChatMessageContent() {
+            var metadata = new Dictionary<string, object>() {
+                { "total_duration", TotalDuration },
+                { "load_duration", LoadDuration },
+                { "prompt_eval_count", PromptEvalCount },
+                { "prompt_eval_duration", PromptEvalDuration },
+                { "eval_count", EvalCount },
+                { "eval_duration", EvalDuration }
+            };
+
+            return new StreamingChatMessageContent(
+                role: new AuthorRole(Message.Role),
+                content: Message.Content,
+                modelId: Model,
+                metadata: metadata!);
+        }
+    }
+}
+
+namespace Codeblaze.SemanticKernel.Connectors.Ollama {
+    public class OllamaResponseMessage {
+        /// <summary>
+        /// The model used to generate the response.
+        /// </summary>
+        [JsonProperty("model")]
+        public string Model { get; set; } = null!;
+
+        /// <summary>
+        /// The message created date.
+        /// </summary>
+        [JsonProperty("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Value indicating whether the message is done.
+        /// </summary>
+        [JsonProperty("done")]
+        public bool Done { get; set; } = false!;
+
+        /// <summary>
+        /// The time spent generating the response.
+        /// </summary>
+        [JsonProperty("total_duration")]
+        public UInt64 TotalDuration { get; set; } = 0;
+
+        /// <summary>
+        /// The time spent in nanoseconds loading the model.
+        /// </summary>
+        [JsonProperty("load_duration")]
+        public UInt64 LoadDuration { get; set; } = 0;
+
+        /// <summary>
+        /// The number of tokens in the prompt.
+        /// </summary>
+        [JsonProperty("generate_duration")]
+        public int PromptEvalCount { get; set; } = 0;
+
+        /// <summary>
+        /// The time spent in nanoseconds evaluating the prompt.
+        /// </summary>
+        [JsonProperty("prompt_eval_count")]
+        public UInt64 PromptEvalDuration { get; set; } = 0;
+
+        /// <summary>
+        /// The number of tokens the response.
+        /// </summary>
+        [JsonProperty("eval_count")]
+        public int EvalCount { get; set; } = 0;
+
+        /// <summary>
+        /// The time in nanoseconds spent generating the response.
+        /// </summary>
+        [JsonProperty("eval_duration")]
+        public UInt64 EvalDuration { get; set; }
+    }
+}
