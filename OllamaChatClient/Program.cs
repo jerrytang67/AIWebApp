@@ -1,9 +1,8 @@
-﻿using System.Net.Http.Headers;
-using System.Text;
+﻿using System.Net.Http.Json;
+using Codeblaze.SemanticKernel.Connectors.Ollama.ChatCompletion;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 using HttpClient client = new();
@@ -12,7 +11,6 @@ client.BaseAddress = new Uri("http://localhost:11434");
 while (true) {
     Console.Write("请输入问题：");
     var q = Console.ReadLine();
-
     var data = new {
         model = "llama3:8b",
         messages = new[] {
@@ -27,54 +25,26 @@ while (true) {
         },
         stream = true
     };
-    string content = JsonConvert.SerializeObject(data);
-    var buffer = Encoding.UTF8.GetBytes(content);
-    var byteContent = new ByteArrayContent(buffer);
-    byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-    var response = await client.PostAsync("/api/chat", byteContent).ConfigureAwait(false);
+    var response = await client.PostAsJsonAsync("/api/chat", data).ConfigureAwait(false);
+    var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+    using var reader = new StreamReader(stream);
+    var jsonReader = new JsonTextReader(reader) {
+        SupportMultipleContent = true // Important to support jsonl format
+    };
+    var jsonSerializer = new JsonSerializer();
     var done = false;
-    while (!done) {
-        string jsonResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        Console.WriteLine(jsonResponse);
-        Console.WriteLine();
-        Console.WriteLine();
-        var jsonObjects = jsonResponse.Split(["}\n{"], StringSplitOptions.None);
-        for (var i = 0; i < jsonObjects.Length; i++) {
-            if (i != 0) {
-                jsonObjects[i] = "{" + jsonObjects[i];
-            }
 
-            if (i != jsonObjects.Length - 1) {
-                jsonObjects[i] += "}";
-            }
-
-            var obj = JObject.Parse(jsonObjects[i]);
-            ProcessElement(obj, out done);
+    while (!done && jsonReader.Read()) {
+        var message = jsonSerializer.Deserialize<OllamaChatResponseMessage>(jsonReader);
+        if (message != null) {
+            done = message.Done;
+            Console.Write(message?.Message.Content);
         }
-        // yield return chatResponseMessage!.ToStreamingChatMessageContent();
     }
 
     Console.WriteLine();
     Console.WriteLine();
 }
-
-
-void ProcessElement(JObject element, out bool done) {
-    // 在这里处理 JObject
-    // 你可以使用 element["propertyName"] 或者 element.Property("propertyName") 来访问属性
-    // 例如：var content = element["message"]?["content"]?.ToString();
-    // 其中 "?" 是在属性不存在时避免空引用异常的 C# 语法糖
-    // 进行你的后续处理...
-    var content = element["message"]?["content"]?.ToString();
-    done = element["done"]?.ToObject<bool>() ?? false;
-    Console.Write(content);
-}
-
-
-// {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
-// {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
-// {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
-// {"model":"llama3:8b","created_at":"2024-04-29T13:33:10.8926565Z","message":{"role":"assistant","content":"😊"},"done":false}
 
 namespace Codeblaze.SemanticKernel.Connectors.Ollama.ChatCompletion {
     public class OllamaChatResponseMessageContent {
