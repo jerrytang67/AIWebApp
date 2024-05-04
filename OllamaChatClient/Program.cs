@@ -12,7 +12,8 @@ while (true) {
     Console.Write("请输入问题：");
     var q = Console.ReadLine();
     var data = new {
-        model = "llama3:8b",
+        // model = "llama3:8b",
+        model = "wangshenzhi/llama3-8b-chinese-chat-ollama-q8:latest",
         messages = new[] {
             new {
                 role = "system",
@@ -25,8 +26,11 @@ while (true) {
         },
         stream = true
     };
-    var response = await client.PostAsJsonAsync("/api/chat", data).ConfigureAwait(false);
-    var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+    
+    var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat");
+    request.Content = JsonContent.Create(data);
+    var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+    await using var stream = await response.Content.ReadAsStreamAsync();
     using var reader = new StreamReader(stream);
     var jsonReader = new JsonTextReader(reader) {
         SupportMultipleContent = true // Important to support jsonl format
@@ -38,7 +42,7 @@ while (true) {
         var message = jsonSerializer.Deserialize<OllamaChatResponseMessage>(jsonReader);
         if (message != null) {
             done = message.Done;
-            Console.Write(message?.Message.Content);
+            await Console.Out.WriteAsync(message?.Message.Content);
         }
     }
 
