@@ -8,9 +8,24 @@ Console.OutputEncoding = System.Text.Encoding.UTF8;
 using HttpClient client = new();
 client.BaseAddress = new Uri("http://localhost:11434");
 
+var history = new List<object>();
+
 while (true) {
     Console.Write("请输入问题：");
+    var assistant = "";
     var q = Console.ReadLine();
+    history.Add(new {
+        role = "user",
+        content = q
+    });
+
+    // Check the length of the history list
+    if (history.Count > 20) {
+        // Remove the oldest history record
+        history.RemoveAt(0);
+        history.RemoveAt(0);
+    }
+
     var data = new {
         // model = "llama3:8b",
         model = "wangshenzhi/llama3-8b-chinese-chat-ollama-q8:latest",
@@ -18,15 +33,11 @@ while (true) {
             new {
                 role = "system",
                 content = "你是一个全知全能的中文助手,你叫哒哒,请把问题用简短的中文回答"
-            },
-            new {
-                role = "user",
-                content = q
             }
-        },
+        }.Concat(history),
         stream = true
     };
-    
+
     var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat");
     request.Content = JsonContent.Create(data);
     var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
@@ -42,9 +53,16 @@ while (true) {
         var message = jsonSerializer.Deserialize<OllamaChatResponseMessage>(jsonReader);
         if (message != null) {
             done = message.Done;
-            await Console.Out.WriteAsync(message?.Message.Content);
+            var txt = message.Message.Content;
+            assistant += txt;
+            await Console.Out.WriteAsync(txt);
+            history.Add(new {
+                role = "assistant",
+                content = txt
+            });
         }
     }
+
 
     Console.WriteLine();
     Console.WriteLine();
